@@ -59,10 +59,20 @@ export default function TradesPage() {
 
   // Groups
   const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const saved = localStorage.getItem("selectedGroupId");
+    return saved ? parseInt(saved) : null;
+  });
   const [groupMembers, setGroupMembers] = useState<GroupUser[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [loadingMembers, setLoadingMembers] = useState(false);
+
+  function selectGroup(id: number | null) {
+    setSelectedGroupId(id);
+    if (id === null) localStorage.removeItem("selectedGroupId");
+    else localStorage.setItem("selectedGroupId", String(id));
+  }
 
   // Modals
   const [showCreate, setShowCreate] = useState(false);
@@ -90,14 +100,27 @@ export default function TradesPage() {
       });
   }, []);
 
-  const loadGroups = useCallback(() => {
+  const loadGroups = useCallback((keepSelected?: number) => {
     setLoadingGroups(true);
     fetch("/api/groups")
       .then((r) => r.json())
       .then((data) => {
-        setGroups(data.groups ?? []);
+        const fetched: Group[] = data.groups ?? [];
+        setGroups(fetched);
         setLoadingGroups(false);
-      });
+        // Restore saved selection only if group still exists
+        const savedId = keepSelected ?? (() => {
+          const s = localStorage.getItem("selectedGroupId");
+          return s ? parseInt(s) : null;
+        })();
+        if (savedId !== null && fetched.some((g) => g.id === savedId)) {
+          setSelectedGroupId(savedId);
+        } else if (savedId !== null) {
+          localStorage.removeItem("selectedGroupId");
+          setSelectedGroupId(null);
+        }
+      })
+      .catch(() => setLoadingGroups(false));
   }, []);
 
   useEffect(() => {
@@ -152,8 +175,7 @@ export default function TradesPage() {
     });
     const data = await res.json();
     if (!res.ok) { setFormError(data.error ?? "Error"); setFormLoading(false); return; }
-    await loadGroups();
-    setSelectedGroupId(data.group.id);
+    loadGroups(data.group.id);
     setShowCreate(false); resetForm();
   }
 
@@ -170,8 +192,7 @@ export default function TradesPage() {
     });
     const data = await res.json();
     if (!res.ok) { setFormError(data.error ?? "Error"); setFormLoading(false); return; }
-    await loadGroups();
-    setSelectedGroupId(data.group.id);
+    loadGroups(data.group.id);
     setShowJoin(false); resetForm();
   }
 
@@ -190,7 +211,7 @@ export default function TradesPage() {
     });
     const data = await res.json();
     if (!res.ok) { setFormError(data.error ?? "Error"); setFormLoading(false); return; }
-    await loadGroups();
+    loadGroups();
     setShowEdit(false); resetForm();
   }
 
@@ -203,8 +224,8 @@ export default function TradesPage() {
     );
     if (!confirm) return;
     await fetch(`/api/groups/${selectedGroup.id}`, { method: "DELETE" });
-    setSelectedGroupId(null);
-    await loadGroups();
+    selectGroup(null);
+    loadGroups();
   }
 
   const loading = loadingTrades || loadingUsers || loadingGroups;
@@ -243,7 +264,7 @@ export default function TradesPage() {
               <div className="relative">
                 <select
                   value={selectedGroupId ?? ""}
-                  onChange={(e) => setSelectedGroupId(e.target.value ? parseInt(e.target.value) : null)}
+                  onChange={(e) => selectGroup(e.target.value ? parseInt(e.target.value) : null)}
                   className="appearance-none pl-3 pr-8 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500 cursor-pointer"
                 >
                   <option value="">Sin grupo seleccionado</option>
