@@ -5,6 +5,24 @@ import { TeamDef } from "@/lib/album-data";
 import StickerCard from "./StickerCard";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
+const SUBDIVISION_FLAGS: Record<string, string> = {
+  ENG: "gb-eng",
+  SCO: "gb-sct",
+  WAL: "gb-wls",
+};
+
+function getFlagUrl(team: TeamDef): string | null {
+  if (SUBDIVISION_FLAGS[team.id]) {
+    return `https://flagcdn.com/w40/${SUBDIVISION_FLAGS[team.id]}.png`;
+  }
+  const pts = Array.from(team.flag).map((c) => c.codePointAt(0) ?? 0);
+  if (pts.length >= 2 && pts[0] >= 0x1f1e0 && pts[0] <= 0x1f1ff) {
+    const iso2 = String.fromCharCode(pts[0] - 0x1f1e0 + 65, pts[1] - 0x1f1e0 + 65).toLowerCase();
+    return `https://flagcdn.com/w40/${iso2}.png`;
+  }
+  return null;
+}
+
 type FilterType = "all" | "missing" | "have" | "repeated";
 
 interface Props {
@@ -42,7 +60,11 @@ export default function AlbumSection({
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-700/40 transition text-left"
       >
-        <span className="text-xl flex-shrink-0">{team.flag}</span>
+        {(() => { const url = getFlagUrl(team); return url ? (
+          <img src={url} alt={team.name} className="w-9 h-6 object-cover rounded-sm flex-shrink-0" />
+        ) : (
+          <span className="text-xl flex-shrink-0">{team.flag}</span>
+        ); })()}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-white text-sm truncate">{team.name}</span>

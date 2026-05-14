@@ -112,8 +112,8 @@ export const CONFEDERATIONS: ConfederationDef[] = [
         stickers: ts("SUI", ["Switzerland Logo", "Gregor Kobel", "Manuel Akanji", "Ricardo Rodríguez", "Nico Elvedi", "Silvan Widmer", "Granit Xhaka", "Remo Freuler", "Fabian Rieder", "Breel Embolo", "Rubén Vargas", "Dan Ndoye"]),
       },
       {
-        id: "TUR", name: "Türkiye", flag: "🇹🇷",
-        stickers: ts("TUR", ["Türkiye Logo", "Uğurcan Çakır", "Mert Müldür", "Abdülkerim Bardakcı", "Merih Demiral", "Ferdi Kadıoğlu", "Hakan Çalhanoğlu", "Orkun Kökçü", "Arda Güler", "Can Uzun", "Kerem Aktürkoğlu", "Kenan Yıldız"]),
+        id: "TUR", name: "Turquía", flag: "🇹🇷",
+        stickers: ts("TUR", ["Turquía Logo", "Uğurcan Çakır", "Mert Müldür", "Abdülkerim Bardakcı", "Merih Demiral", "Ferdi Kadıoğlu", "Hakan Çalhanoğlu", "Orkun Kökçü", "Arda Güler", "Can Uzun", "Kerem Aktürkoğlu", "Kenan Yıldız"]),
       },
       {
         id: "AUT", name: "Austria", flag: "🇦🇹",
