@@ -5,12 +5,15 @@ import { TeamDef } from "@/lib/album-data";
 import StickerCard from "./StickerCard";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
+type FilterType = "all" | "missing" | "have" | "repeated";
+
 interface Props {
   team: TeamDef;
   collection: Record<string, number>;
   savingIds: Set<string>;
   onStickerChange: (stickerId: string, count: number) => void;
   defaultOpen?: boolean;
+  filter?: FilterType;
 }
 
 export default function AlbumSection({
@@ -19,6 +22,7 @@ export default function AlbumSection({
   savingIds,
   onStickerChange,
   defaultOpen = false,
+  filter = "all",
 }: Props) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -72,7 +76,12 @@ export default function AlbumSection({
       {open && (
         <div className="px-4 pb-4 pt-1">
           <div className="grid gap-1.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(72px, 1fr))" }}>
-            {team.stickers.map((sticker) => (
+            {team.stickers.filter((s) => {
+              if (filter === "missing") return (collection[s.id] ?? 0) === 0;
+              if (filter === "have") return (collection[s.id] ?? 0) >= 1;
+              if (filter === "repeated") return (collection[s.id] ?? 0) > 1;
+              return true;
+            }).map((sticker) => (
               <StickerCard
                 key={sticker.id}
                 sticker={sticker}

@@ -241,6 +241,7 @@ export default function AlbumPage() {
                           savingIds={savingIds}
                           onStickerChange={handleStickerChange}
                           defaultOpen={conf.id === "ESPECIAL"}
+                          filter={filter}
                         />
                       ))}
                     </div>
@@ -279,6 +280,7 @@ export default function AlbumPage() {
                           savingIds={savingIds}
                           onStickerChange={handleStickerChange}
                           defaultOpen={false}
+                          filter={filter}
                         />
                       ))}
                     </div>
