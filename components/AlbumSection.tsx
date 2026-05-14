@@ -16,8 +16,8 @@ function getFlagUrl(team: TeamDef): string | null {
     return `https://flagcdn.com/w40/${SUBDIVISION_FLAGS[team.id]}.png`;
   }
   const pts = Array.from(team.flag).map((c) => c.codePointAt(0) ?? 0);
-  if (pts.length >= 2 && pts[0] >= 0x1f1e0 && pts[0] <= 0x1f1ff) {
-    const iso2 = String.fromCharCode(pts[0] - 0x1f1e0 + 65, pts[1] - 0x1f1e0 + 65).toLowerCase();
+  if (pts.length >= 2 && pts[0] >= 0x1f1e6 && pts[0] <= 0x1f1ff) {
+    const iso2 = String.fromCharCode(pts[0] - 0x1f1e6 + 65, pts[1] - 0x1f1e6 + 65).toLowerCase();
     return `https://flagcdn.com/w40/${iso2}.png`;
   }
   return null;
