@@ -19,7 +19,7 @@ export default function AlbumPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"confederation" | "groups">("confederation");
+  const [viewMode, setViewMode] = useState<"confederation" | "groups">("groups");
 
   const pendingSaves = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
@@ -251,6 +251,32 @@ export default function AlbumPage() {
             </>
           ) : (
             <>
+              {/* INTRO always shown at top in groups view */}
+              {(() => {
+                const intro = CONFEDERATIONS.find((c) => c.id === "ESPECIAL");
+                if (!intro) return null;
+                const teamsToShow = intro.teams.filter((team) => {
+                  if (searchLower && !team.name.toLowerCase().includes(searchLower) && !team.id.toLowerCase().includes(searchLower)) return false;
+                  if (filter === "missing") return team.stickers.some((s) => !collection[s.id]);
+                  if (filter === "have") return team.stickers.some((s) => (collection[s.id] ?? 0) >= 1);
+                  if (filter === "repeated") return team.stickers.some((s) => (collection[s.id] ?? 0) > 1);
+                  return true;
+                });
+                if (teamsToShow.length === 0) return null;
+                return (
+                  <div key="intro-groups">
+                    <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      {intro.name}
+                      <span className="text-slate-600 normal-case font-normal tracking-normal">({teamsToShow.length} selecciones)</span>
+                    </h2>
+                    <div className="space-y-2">
+                      {teamsToShow.map((team) => (
+                        <AlbumSection key={team.id} team={team} collection={collection} savingIds={savingIds} onStickerChange={handleStickerChange} defaultOpen filter={filter} />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
               {GROUPS.map((group) => {
                 const teamsToShow = group.teamIds
                   .map((id) => ALL_TEAMS.get(id))

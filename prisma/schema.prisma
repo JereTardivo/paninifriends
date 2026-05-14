@@ -8,11 +8,35 @@ datasource db {
 }
 
 model User {
-  id        Int           @id @default(autoincrement())
-  username  String        @unique
-  password  String
-  stickers  UserSticker[]
-  createdAt DateTime      @default(now())
+  id             Int           @id @default(autoincrement())
+  username       String        @unique
+  password       String
+  stickers       UserSticker[]
+  createdGroups  Group[]       @relation("CreatedGroups")
+  groupMembers   GroupMember[]
+  createdAt      DateTime      @default(now())
+}
+
+model Group {
+  id         Int           @id @default(autoincrement())
+  name       String
+  code       String        @unique
+  password   String
+  creatorId  Int
+  creator    User          @relation("CreatedGroups", fields: [creatorId], references: [id], onDelete: Cascade)
+  members    GroupMember[]
+  createdAt  DateTime      @default(now())
+}
+
+model GroupMember {
+  id       Int      @id @default(autoincrement())
+  groupId  Int
+  userId   Int
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
 }
 
 model UserSticker {
