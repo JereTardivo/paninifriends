@@ -27,7 +27,7 @@ function fwc(names: string[]): StickerDef[] {
 export const CONFEDERATIONS: ConfederationDef[] = [
   {
     id: "ESPECIAL",
-    name: "✨ Presentación",
+    name: "✨ INTRO",
     teams: [
       {
         id: "FWC",
@@ -290,3 +290,31 @@ export const TOTAL_STICKERS = ALL_STICKERS.size;
 export function getStickerById(id: string) {
   return ALL_STICKERS.get(id);
 }
+
+export const ALL_TEAMS = new Map<string, TeamDef>();
+for (const conf of CONFEDERATIONS) {
+  for (const team of conf.teams) {
+    ALL_TEAMS.set(team.id, team);
+  }
+}
+
+export interface GroupDef {
+  id: string;
+  name: string;
+  teamIds: string[];
+}
+
+export const GROUPS: GroupDef[] = [
+  { id: "A", name: "Grupo A", teamIds: ["MEX", "RSA", "KOR", "CZE"] },
+  { id: "B", name: "Grupo B", teamIds: ["CAN", "BIH", "QAT", "SUI"] },
+  { id: "C", name: "Grupo C", teamIds: ["BRA", "MAR", "HAI", "SCO"] },
+  { id: "D", name: "Grupo D", teamIds: ["USA", "PAR", "AUS", "TUR"] },
+  { id: "E", name: "Grupo E", teamIds: ["GER", "CUR", "CIV", "ECU"] },
+  { id: "F", name: "Grupo F", teamIds: ["NED", "JPN", "SWE", "TUN"] },
+  { id: "G", name: "Grupo G", teamIds: ["BEL", "EGY", "IRN", "NZL"] },
+  { id: "H", name: "Grupo H", teamIds: ["ESP", "CPV", "KSA", "URU"] },
+  { id: "I", name: "Grupo I", teamIds: ["FRA", "SEN", "IRQ", "NOR"] },
+  { id: "J", name: "Grupo J", teamIds: ["ARG", "ALG", "AUT", "JOR"] },
+  { id: "K", name: "Grupo K", teamIds: ["POR", "COD", "UZB", "COL"] },
+  { id: "L", name: "Grupo L", teamIds: ["ENG", "CRO", "GHA", "PAN"] },
+];

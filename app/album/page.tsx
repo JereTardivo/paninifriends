@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import AlbumSection from "@/components/AlbumSection";
-import { CONFEDERATIONS, TOTAL_STICKERS } from "@/lib/album-data";
-import { Search, X } from "lucide-react";
+import { CONFEDERATIONS, GROUPS, ALL_TEAMS, TOTAL_STICKERS } from "@/lib/album-data";
+import { Search, X, LayoutList, Grid2x2 } from "lucide-react";
 
 type FilterType = "all" | "missing" | "have" | "repeated";
 
@@ -19,6 +19,7 @@ export default function AlbumPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"confederation" | "groups">("confederation");
 
   const pendingSaves = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
@@ -147,7 +148,7 @@ export default function AlbumPage() {
           </div>
         </div>
 
-        {/* Filters + Search */}
+        {/* Filters + Search + View Toggle */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <div className="flex gap-1 flex-wrap">
             {(["all", "missing", "have", "repeated"] as FilterType[]).map((f) => (
@@ -181,52 +182,111 @@ export default function AlbumPage() {
               </button>
             )}
           </div>
+          {/* View mode toggle */}
+          <div className="flex gap-1 ml-auto">
+            <button
+              onClick={() => setViewMode("confederation")}
+              title="Por Confederación"
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${
+                viewMode === "confederation"
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700"
+              }`}
+            >
+              <LayoutList size={14} />
+              Confederación
+            </button>
+            <button
+              onClick={() => setViewMode("groups")}
+              title="Por Grupos"
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${
+                viewMode === "groups"
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700"
+              }`}
+            >
+              <Grid2x2 size={14} />
+              Grupos
+            </button>
+          </div>
         </div>
 
         {/* Album sections */}
         <div className="space-y-6">
-          {CONFEDERATIONS.map((conf) => {
-            const teamsToShow = conf.teams.filter((team) => {
-              if (searchLower && !team.name.toLowerCase().includes(searchLower) && !team.id.toLowerCase().includes(searchLower)) {
-                return false;
-              }
-              if (filter === "missing") {
-                return team.stickers.some((s) => !collection[s.id]);
-              }
-              if (filter === "have") {
-                return team.stickers.some((s) => (collection[s.id] ?? 0) >= 1);
-              }
-              if (filter === "repeated") {
-                return team.stickers.some((s) => (collection[s.id] ?? 0) > 1);
-              }
-              return true;
-            });
-
-            if (teamsToShow.length === 0) return null;
-
-            return (
-              <div key={conf.id}>
-                <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                  {conf.name}
-                  <span className="text-slate-600 normal-case font-normal tracking-normal">
-                    ({teamsToShow.length} selecciones)
-                  </span>
-                </h2>
-                <div className="space-y-2">
-                  {teamsToShow.map((team) => (
-                    <AlbumSection
-                      key={team.id}
-                      team={team}
-                      collection={collection}
-                      savingIds={savingIds}
-                      onStickerChange={handleStickerChange}
-                      defaultOpen={conf.id === "ESPECIAL"}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+          {viewMode === "confederation" ? (
+            <>
+              {CONFEDERATIONS.map((conf) => {
+                const teamsToShow = conf.teams.filter((team) => {
+                  if (searchLower && !team.name.toLowerCase().includes(searchLower) && !team.id.toLowerCase().includes(searchLower)) return false;
+                  if (filter === "missing") return team.stickers.some((s) => !collection[s.id]);
+                  if (filter === "have") return team.stickers.some((s) => (collection[s.id] ?? 0) >= 1);
+                  if (filter === "repeated") return team.stickers.some((s) => (collection[s.id] ?? 0) > 1);
+                  return true;
+                });
+                if (teamsToShow.length === 0) return null;
+                return (
+                  <div key={conf.id}>
+                    <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      {conf.name}
+                      <span className="text-slate-600 normal-case font-normal tracking-normal">
+                        ({teamsToShow.length} selecciones)
+                      </span>
+                    </h2>
+                    <div className="space-y-2">
+                      {teamsToShow.map((team) => (
+                        <AlbumSection
+                          key={team.id}
+                          team={team}
+                          collection={collection}
+                          savingIds={savingIds}
+                          onStickerChange={handleStickerChange}
+                          defaultOpen={conf.id === "ESPECIAL"}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          ) : (
+            <>
+              {GROUPS.map((group) => {
+                const teamsToShow = group.teamIds
+                  .map((id) => ALL_TEAMS.get(id))
+                  .filter((team): team is NonNullable<typeof team> => {
+                    if (!team) return false;
+                    if (searchLower && !team.name.toLowerCase().includes(searchLower) && !team.id.toLowerCase().includes(searchLower)) return false;
+                    if (filter === "missing") return team.stickers.some((s) => !collection[s.id]);
+                    if (filter === "have") return team.stickers.some((s) => (collection[s.id] ?? 0) >= 1);
+                    if (filter === "repeated") return team.stickers.some((s) => (collection[s.id] ?? 0) > 1);
+                    return true;
+                  });
+                if (teamsToShow.length === 0) return null;
+                return (
+                  <div key={group.id}>
+                    <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      {group.name}
+                      <span className="text-slate-600 normal-case font-normal tracking-normal">
+                        ({teamsToShow.length} selecciones)
+                      </span>
+                    </h2>
+                    <div className="space-y-2">
+                      {teamsToShow.map((team) => (
+                        <AlbumSection
+                          key={team.id}
+                          team={team}
+                          collection={collection}
+                          savingIds={savingIds}
+                          onStickerChange={handleStickerChange}
+                          defaultOpen={false}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
       </div>
     </div>
