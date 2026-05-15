@@ -66,11 +66,22 @@ export default function AlbumSection({
           <span className="text-xl flex-shrink-0">{team.flag}</span>
         ); })()}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-white text-sm truncate">{team.name}</span>
             <span className="text-slate-500 text-xs font-mono">({team.id})</span>
             {teamComplete && (
               <span className="text-xs bg-green-600 text-white px-1.5 py-0.5 rounded font-semibold">✓ Completo</span>
+            )}
+            {teamHave === 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  team.stickers.forEach((s) => onStickerChange(s.id, 1));
+                }}
+                className="text-[10px] px-2 py-0.5 bg-blue-700/40 hover:bg-blue-600/60 border border-blue-600/50 text-blue-300 rounded font-semibold transition"
+              >
+                Marcar todos
+              </button>
             )}
           </div>
           {/* Progress bar */}

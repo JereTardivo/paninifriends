@@ -21,6 +21,7 @@ interface Trade {
 interface GroupUser {
   id: number;
   username: string;
+  isMe?: boolean;
 }
 
 interface Group {
@@ -52,10 +53,8 @@ export default function TradesPage() {
   const router = useRouter();
 
   const [trades, setTrades] = useState<Trade[]>([]);
-  const [users, setUsers] = useState<GroupUser[]>([]);
   const [selectedUser, setSelectedUser] = useState<GroupUser | null>(null);
   const [loadingTrades, setLoadingTrades] = useState(true);
-  const [loadingUsers, setLoadingUsers] = useState(true);
 
   // Groups
   const [groups, setGroups] = useState<Group[]>([]);
@@ -127,12 +126,6 @@ export default function TradesPage() {
     if (status !== "authenticated") return;
     loadTrades();
     loadGroups();
-    fetch("/api/users")
-      .then((r) => r.json())
-      .then((data) => {
-        setUsers(data.users ?? []);
-        setLoadingUsers(false);
-      });
   }, [status, loadTrades, loadGroups]);
 
   useEffect(() => {
@@ -145,16 +138,15 @@ export default function TradesPage() {
     fetch(`/api/groups/${selectedGroupId}/members`)
       .then((r) => r.json())
       .then((data) => {
-        const others = (data.members ?? []).filter((m: GroupUser & { isMe?: boolean }) => !m.isMe);
-        setGroupMembers(others);
+        setGroupMembers(data.members ?? []);
         setLoadingMembers(false);
       });
   }, [selectedGroupId]);
 
-  const displayUsers = selectedGroupId !== null ? groupMembers : users;
+  const displayUsers = groupMembers.filter((m) => !m.isMe);
   const displayTrades = selectedGroupId !== null
-    ? trades.filter((t) => groupMembers.some((m) => m.id === t.withUser.id))
-    : trades;
+    ? trades.filter((t) => displayUsers.some((m) => m.id === t.withUser.id))
+    : [];
 
   const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? null;
 
@@ -215,6 +207,14 @@ export default function TradesPage() {
     setShowEdit(false); resetForm();
   }
 
+  async function handleRemoveMember(userId: number, username: string) {
+    if (!selectedGroup) return;
+    if (!window.confirm(`¿Eliminar a "${username}" del grupo?`)) return;
+    await fetch(`/api/groups/${selectedGroup.id}/members/${userId}`, { method: "DELETE" });
+    setGroupMembers((prev) => prev.filter((m) => m.id !== userId));
+    loadGroups();
+  }
+
   async function handleLeaveOrDelete() {
     if (!selectedGroup) return;
     const confirm = window.confirm(
@@ -228,7 +228,7 @@ export default function TradesPage() {
     loadGroups();
   }
 
-  const loading = loadingTrades || loadingUsers || loadingGroups;
+  const loading = loadingTrades || loadingGroups;
 
   if (status === "loading" || loading) {
     return (
@@ -311,10 +311,40 @@ export default function TradesPage() {
 
             {/* Group info */}
             {selectedGroup && (
-              <div className="text-xs text-slate-400 border-t border-slate-700 pt-2 flex flex-wrap gap-4">
-                <span>📋 Código: <span className="font-mono text-white font-bold">{selectedGroup.code}</span></span>
-                <span>👤 Creador: <span className="text-white">{selectedGroup.creatorUsername}</span></span>
-                <span>👥 Miembros: <span className="text-white">{selectedGroup.memberCount}/10</span></span>
+              <div className="border-t border-slate-700 pt-3 space-y-2">
+                <div className="text-xs text-slate-400 flex flex-wrap gap-4">
+                  <span>📋 Código: <span className="font-mono text-white font-bold">{selectedGroup.code}</span></span>
+                  <span>👤 Admin: <span className="text-white">{selectedGroup.creatorUsername}</span></span>
+                  <span>👥 Miembros: <span className="text-white">{selectedGroup.memberCount}/10</span></span>
+                </div>
+                {loadingMembers ? (
+                  <div className="text-xs text-slate-500">Cargando miembros...</div>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {groupMembers.map((m) => (
+                      <div key={m.id} className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs border ${
+                        m.isMe
+                          ? "bg-blue-900/30 border-blue-700 text-blue-300"
+                          : "bg-slate-700/50 border-slate-600 text-slate-300"
+                      }`}>
+                        <span className="w-4 h-4 rounded-full bg-slate-600 flex items-center justify-center text-[9px] font-bold text-white">
+                          {m.username[0].toUpperCase()}
+                        </span>
+                        <span>{m.username}</span>
+                        {m.isMe && <span className="text-blue-400 text-[9px] font-bold">TÚ</span>}
+                        {selectedGroup.isCreator && !m.isMe && (
+                          <button
+                            onClick={() => handleRemoveMember(m.id, m.username)}
+                            className="ml-0.5 text-slate-500 hover:text-red-400 transition"
+                            title={`Eliminar a ${m.username}`}
+                          >
+                            <X size={11} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -334,15 +364,19 @@ export default function TradesPage() {
             </h2>
           </div>
 
-          {loadingMembers ? (
+          {selectedGroupId === null ? (
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
+              <div className="text-4xl mb-3">👥</div>
+              <p className="text-white font-semibold mb-1">Seleccioná un grupo</p>
+              <p className="text-slate-500 text-sm">Para ver y calcular intercambios tenés que estar en un grupo.</p>
+            </div>
+          ) : loadingMembers ? (
             <div className="flex justify-center py-8">
               <div className="w-6 h-6 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
             </div>
           ) : displayUsers.length === 0 ? (
             <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6 text-center text-slate-500 text-sm">
-              {selectedGroupId !== null
-                ? "No hay otros miembros en este grupo todavía. Compartí el código y contraseña para que se unan."
-                : "No hay otros usuarios registrados todavía."}
+              No hay otros miembros en este grupo todavía. Compartí el código y contraseña para que se unan.
             </div>
           ) : (
             <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
